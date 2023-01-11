@@ -1,0 +1,262 @@
+Bias-Variance Tradeoff - Lab
+Introduction
+In this lab, you'll practice the concepts you learned in the last lesson, bias-variance tradeoff.
+
+Objectives
+In this lab you will:
+
+Demonstrate the tradeoff between bias and variance by way of fitting a machine learning model
+Let's get started!
+In this lab, you'll try to predict some movie revenues based on certain factors, such as ratings and movie year. Start by running the following cell which imports all the necessary functions and the dataset:
+
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
+%matplotlib inline
+​
+df = pd.read_excel('movie_data_detailed_with_ols.xlsx')
+df.head()
+Unnamed: 0	budget	domgross	title	Response_Json	Year	imdbRating	Metascore	imdbVotes	Model
+0	0	13000000	25682380	21 &amp; Over	0	2008	6.8	48	206513	4.912759e+07
+1	1	45658735	13414714	Dredd 3D	0	2012	0.0	0	0	2.267265e+05
+2	2	20000000	53107035	12 Years a Slave	0	2013	8.1	96	537525	1.626624e+08
+3	3	61000000	75612460	2 Guns	0	2013	6.7	55	173726	7.723381e+07
+4	4	40000000	95020213	42	0	2013	7.5	62	74170	4.151958e+07
+df.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 30 entries, 0 to 29
+Data columns (total 10 columns):
+ #   Column         Non-Null Count  Dtype  
+---  ------         --------------  -----  
+ 0   Unnamed: 0     30 non-null     int64  
+ 1   budget         30 non-null     int64  
+ 2   domgross       30 non-null     int64  
+ 3   title          30 non-null     object 
+ 4   Response_Json  30 non-null     int64  
+ 5   Year           30 non-null     int64  
+ 6   imdbRating     30 non-null     float64
+ 7   Metascore      30 non-null     int64  
+ 8   imdbVotes      30 non-null     int64  
+ 9   Model          30 non-null     float64
+dtypes: float64(2), int64(7), object(1)
+memory usage: 2.5+ KB
+Subset the df DataFrame to only keep the 'domgross', 'budget', 'imdbRating', 'Metascore', and 'imdbVotes' columns.
+
+# Subset the DataFrame
+#df = df['domgross', 'budget', 'imdbRating', 'Metascore', 'imdbVotes']
+df = df[['domgross', 'budget', 'imdbRating', 'Metascore', 'imdbVotes']]
+df.head()
+domgross	budget	imdbRating	Metascore	imdbVotes
+0	25682380	13000000	6.8	48	206513
+1	13414714	45658735	0.0	0	0
+2	53107035	20000000	8.1	96	537525
+3	75612460	61000000	6.7	55	173726
+4	95020213	40000000	7.5	62	74170
+df.info()
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 30 entries, 0 to 29
+Data columns (total 5 columns):
+ #   Column      Non-Null Count  Dtype  
+---  ------      --------------  -----  
+ 0   domgross    30 non-null     int64  
+ 1   budget      30 non-null     int64  
+ 2   imdbRating  30 non-null     float64
+ 3   Metascore   30 non-null     int64  
+ 4   imdbVotes   30 non-null     int64  
+dtypes: float64(1), int64(4)
+memory usage: 1.3 KB
+Split the data
+First, assign the predictors to X and the outcome variable, 'domgross' to y
+Split the data into training and test sets. Set the seed to 42 and the test_size to 0.25
+# domgross is the outcome variable
+X = df.drop('domgross', axis=1)
+y = df['domgross']
+​
+X_train , X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42)
+_train
+np.shape(X_train)
+(22, 4)
+Use the MinMaxScaler to scale the training set. Remember you can fit and transform in a single method using .fit_transform().
+
+# Transform with MinMaxScaler
+scaler = MinMaxScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+np.shape(X_train_scaled)
+(22, 4)
+Transform the test data (X_test) using the same scaler:
+
+# Scale the test set
+X_test_scaled = scaler.transform(X_test)
+Fit a regression model to the training data
+# Your code 
+#linreg = LinearRegression().fit(X_train, y_train)
+linreg = LinearRegression()
+#linreg.fit(X_train, y_train)
+linreg.fit(X_train_scaled, y_train)
+
+LinearRegression
+LinearRegression()
+Use the model to make predictions on both the training and test sets:
+
+# Training set predictions
+lm_train_predictions = linreg.predict(X_train_scaled)
+​
+# Test set predictions 
+lm_test_predictions = linreg.predict(X_test_scaled)
+lm_train_predictions
+array([ 5.55072390e+07,  2.93666594e+07,  4.46641223e+07,  8.59098859e+07,
+        1.81577611e+08,  6.07807142e+07,  3.03804437e+07,  2.19893737e+07,
+        4.59997806e+07,  1.24530848e+08,  1.44085718e+08,  7.60445012e+07,
+        9.49952533e+07,  2.08167424e+08,  4.79239385e+07, -4.65647254e+07,
+        1.01193969e+08,  3.05335204e+07,  1.24709554e+08,  1.19288069e+08,
+        1.62303976e+08,  8.54890824e+07])
+Plot predictions for the training set against the actual data:
+
+# Run this cell - vertical distance between the points and the line denote the errors
+plt.figure(figsize=(8, 5))
+plt.scatter(y_train, lm_train_predictions, label='Model')
+plt.plot(y_train, y_train, label='Actual data')
+plt.title('Model vs data for training set')
+plt.legend();
+
+Plot predictions for the test set against the actual data:
+
+# Run this cell - vertical distance between the points and the line denote the errors
+plt.figure(figsize=(8, 5))
+plt.scatter(y_test, lm_test_predictions, label='Model')
+plt.plot(y_test, y_test, label='Actual data')
+plt.title('Model vs data for test set')
+plt.legend();
+
+Bias
+Create a function bias() to calculate the bias of a model's predictions given the actual data: 𝐵𝑖𝑎𝑠(𝑓̂ (𝑥))=𝐸[𝑓̂ (𝑥)−𝑓(𝑥)]
+(The expected value can simply be taken as the mean or average value.)
+
+import numpy as np
+def bias(y, y_hat):
+#    return np.mean(y - y_hat)
+#Look at that formula once more:
+    return np.mean(y_hat - y)
+Variance
+Create a function variance() to calculate the variance of a model's predictions: 𝑉𝑎𝑟(𝑓̂ (𝑥))=𝐸[𝑓̂ (𝑥)2]−(𝐸[𝑓̂ (𝑥)])2
+def variance(y_hat):
+#    return np.mean(y_hat**2) - np.mean(y_hat)**2
+#Close, but not quite:
+#    return [y**2 for y in y_hat] - np.mean(y_hat)**2
+#Forgot to take the mean, genius:
+#    return np.mean([y**2 for y in y_hat] - np.mean(y_hat)**2)
+#Close, but look carefully again at the formula; you put the 
+# parentheses in the wrong spot and you're taking the mean of the
+# whole thing when should be one mean minus the other: 
+    return np.mean([y**2 for y in y_hat]) - np.mean(y_hat)**2
+Calculate bias and variance
+# Bias and variance for training set 
+#b = bias(y, y_train)
+#No, we did stuff to y_train, so now it's:
+#b = bias(y, lm_train_predictions)
+#Almost: yes, we did stuff to y_train with min-max scaling, but now
+# we're comparing that to y_train, not ALL of y:
+b = bias(y_train, lm_train_predictions)
+v = variance(lm_train_predictions)
+print('Train bias: {} \nTrain variance: {}'.format(b, v))
+​
+# Train bias: -8.127906105735085e-09 
+# Train variance: 3406811040986517.0
+Train bias: -4.063953052867542e-09 
+Train variance: 3406811040986517.0
+# Bias and variance for test set 
+b = bias(y_test, lm_test_predictions)
+v = variance(lm_test_predictions)
+print('Test bias: {} \nTest variance: {}'.format(b, v))
+​
+# Test bias: -10982393.918069275 
+# Test variance: 1518678846127932.0
+Test bias: -10982393.918069277 
+Test variance: 1518678846127933.0
+Overfit a new model
+Use PolynomialFeatures with degree 3 and transform X_train_scaled and X_test_scaled.
+
+Important note: By including this, you don't only take polynomials of single variables, but you also combine variables, eg:
+
+Budget∗MetaScore2
+What you're essentially doing is taking interactions and creating polynomials at the same time! Have a look at how many columns we get using np.shape()!
+
+# Your code here
+poly = PolynomialFeatures(3)
+​
+X_train_poly = poly.fit_transform(X_train_scaled)
+X_test_poly = poly.fit_transform(X_test_scaled)
+_test_poly
+# Check the shape
+#X_train_scaled.shape(), X_test_scaled.shape()
+#X_train_poly.shape(), X_test_poly.shape()
+np.shape(X_train_poly), np.shape(X_test_poly)
+((22, 35), (8, 35))
+Fit a regression model to the training data:
+
+X_train_poly, y_train
+# Your code here
+polyreg = LinearRegression().fit(X_train_poly, y_train)
+Use the model to make predictions on both the training and test sets:
+
+# Training set predictions
+poly_train_predictions = polyreg.predict(X_train_poly)
+​
+# Test set predictions 
+poly_test_predictions = polyreg.predict(X_test_poly)
+Plot predictions for the training set against the actual data:
+
+# Run this cell - vertical distance between the points and the line denote the errors
+plt.figure(figsize=(8, 5))
+plt.scatter(y_train, poly_train_predictions, label='Model')
+plt.plot(y_train, y_train, label='Actual data')
+plt.title('Model vs data for training set')
+plt.legend();
+
+Plot predictions for the test set against the actual data:
+
+# Run this cell - vertical distance between the points and the line denote the errors
+plt.figure(figsize=(8, 5))
+plt.scatter(y_test, poly_test_predictions, label='Model')
+plt.plot(y_test, y_test, label='Actual data')
+plt.title('Model vs data for test set')
+plt.legend();
+
+Calculate the bias and variance for the training set:
+
+poly_train_predictions
+# Bias and variance for training set 
+#b = bias(X_train_poly, y_train)
+b = bias(y_train, poly_train_predictions)
+#v = variance(X_train_poly)
+v = variance(poly_train_predictions)
+print('Train bias: {} \nTrain variance: {}'.format(b, v))
+​
+# Train bias: 3.5898251966996625e-07 
+# Train variance: 7394168636697528.0
+Train bias: -8.744272318753329e-07 
+Train variance: 7394168636697464.0
+Calculate the bias and variance for the test set:
+
+poly_test_predictions
+# Bias and variance for test set 
+b = bias(y_test, poly_test_predictions)
+v = variance(poly_test_predictions)
+print('Test bias: {} \nTest variance: {}'.format(b, v))
+​
+# Test bias: -68166032.47666144 
+# Test variance: 4.798244829435879e+16
+Test bias: -68166032.4766629 
+Test variance: 4.798244829436074e+16
+Interpret the overfit model
+# Your description here
+Level Up (Optional)
+In this lab we went from 4 predictors to 35 by adding polynomials and interactions, using PolynomialFeatures. That being said, where 35 leads to overfitting, there are probably ways to improve by adding just a few polynomials. Feel free to experiment and see how bias and variance improve!
+
+Summary
+This lab gave you insight into how bias and variance change for a training and a test set by using both simple and complex models.
